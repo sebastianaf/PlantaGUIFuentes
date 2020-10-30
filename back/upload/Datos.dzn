@@ -1,0 +1,10 @@
+        dias = 7;
+        clientes = 3;
+        centrales = 3;
+
+        costos=[0,0,0];
+        capacidades=[0,0,0];
+        porcentajeRegimen=[0,0,0];
+        diasRegimen=[0,0,0];
+
+        demanda=[|0,0,0,0,0,0,0|0,0,0,0,0,0,0|0,0,0,0,0,0,0|]

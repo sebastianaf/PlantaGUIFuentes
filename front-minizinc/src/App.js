@@ -1,6 +1,5 @@
 import React from 'react';
 import './App.css';
-import { Modal, Button, CardDeck, Card, Form, Alert } from 'react-bootstrap';
 import axios from 'axios';
 
 const backColor = {
@@ -20,17 +19,15 @@ class App extends React.Component {
       regimeDays: [],
       matrix: [],
 
-      r: '',
-      model: -1,
+
       data: 'No hay informacion',
-      dznfile: null,
-      escenas: [],
+      dznfile: null
 
     }
     this.execute = this.execute.bind(this);
-    this.formatdata = this.formatdata.bind(this);
     this.onChangeClients = this.onChangeClients.bind(this);
     this.onChangeDays = this.onChangeDays.bind(this);
+    this.onChangeCentrals = this.onChangeCentrals.bind(this);
     this.onChangeCosts = this.onChangeCosts.bind(this);
     this.onChangeCapabilities = this.onChangeCapabilities.bind(this);
     this.onChangeRegimePercent = this.onChangeRegimePercent.bind(this);
@@ -40,8 +37,8 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    this.setState({ 
-      costs:  new Array(this.state.centrals).fill(0),
+    this.setState({
+      costs: new Array(this.state.centrals).fill(0),
       capabilities: new Array(this.state.centrals).fill(0),
       regimePercent: new Array(this.state.centrals).fill(0),
       regimeDays: new Array(this.state.centrals).fill(0),
@@ -49,32 +46,6 @@ class App extends React.Component {
     })
   }
 
-  formatdata = (text) => {
-    this.setState({ data: "" });
-    var result = ``;
-    var all = text.split("\n");
-    if (all[0].includes("ACTORES =")) {
-      const actores = all[0].split(",").length;
-      result += `Actores: ` + actores + `\n`;
-      var index = all.indexOf(all.find(res => res.includes("Escenas =")));
-      const escenas = all[index].split(",").length - 1;
-      result += `Escenas: ` + escenas + `\n`;
-      /*for (var i=index; i<index+actores; i++ ){
-        result += all[i] + "\n";
-      }*/
-      var disponibilidad = all.find(res => res.includes("Disponibilidad ="));
-      var evitar = all.find(res => res.includes("Evitar ="));
-      if ((typeof disponibilidad !== "undefined") && (typeof evitar !== "undefined")) {
-        result += `Deberias usar el Modelo 2\n`;
-      } else {
-        result += `Deberias usar el Modelo 1\n`;
-      }
-    } else {
-      result = `No hay información`;
-    }
-    console.log(result);
-    return result;
-  }
   dznfile = (event) => {
     event.preventDefault();
     let file = event.target.files[0];
@@ -96,7 +67,7 @@ class App extends React.Component {
       url: 'http://localhost:5000/dzn',
       method: 'POST',
       data: data,
-      params: { model: this.state.model },
+      params: { model: 0 },
       config: { headers: { 'Content-Type': 'multipart/form-data' } }
     }).then((response) => {
       if (response.data === "") {
@@ -126,6 +97,19 @@ class App extends React.Component {
       });
   }
 
+
+  onChangeCentrals = (e) => {
+    this.setState(
+      {
+        centrals: parseInt(e.target.value),
+        costs: new Array(parseInt(e.target.value)).fill(0),
+        capabilities: new Array(parseInt(e.target.value)).fill(0),
+        regimeDays: new Array(parseInt(e.target.value)).fill(0),
+        regimePercent: new Array(parseInt(e.target.value)).fill(0)
+      });
+      
+  }
+
   onChangeDays = (e) => {
     this.setState(
       {
@@ -134,13 +118,13 @@ class App extends React.Component {
       });
   }
 
- onChangeCosts = (e) => {
+  onChangeCosts = (e) => {
     let newCosts = this.state.costs.slice()
     newCosts[e.target.id.substring(3, e.target.id.length)] = parseInt(e.target.value)
     this.setState({
       costs: newCosts
     })
-    //console.log(this.state.costs)
+    console.log(this.state.costs)
   }
 
   onChangeCapabilities = (e) => {
@@ -149,7 +133,7 @@ class App extends React.Component {
     this.setState({
       capabilities: newCapabilities
     })
-    //console.log(this.state.capabilities)
+    console.log(this.state.capabilities)
   }
 
   onChangeRegimePercent = (e) => {
@@ -158,7 +142,7 @@ class App extends React.Component {
     this.setState({
       regimePercent: newRegimePercent
     })
-    //console.log(this.state.regimePercent)
+    console.log(this.state.regimePercent)
   }
 
   onChangeRegimeDays = (e) => {
@@ -167,36 +151,39 @@ class App extends React.Component {
     this.setState({
       regimeDays: newRegimeDays
     })
-    //console.log(this.state.regimeDays)
+    console.log(this.state.regimeDays)
   }
 
   onClickSubmit = () => {
-    
+
     let demanda = '|'
-    for(let i = 0 ; i < this.state.matrix.length ; i++ ){
-      if((i + 1)%this.state.days===0){
+    for (let i = 0; i < this.state.matrix.length; i++) {
+      if ((i + 1) % this.state.days === 0) {
         demanda = (`${demanda}${this.state.matrix[i]}|`)
-      }else{
+      } else {
         demanda = (`${demanda}${this.state.matrix[i]},`)
       }
     }
-    
-    let pre = `
-        dias = ${this.state.days};
-        clientes = ${this.state.clients};
-        centrales = ${this.state.centrals};
 
-        costos=[${this.state.costs}];
-        capacidades=[${this.state.capabilities}];
-        porcentajeRegimen=[${this.state.regimePercent}];
-        diasRegimen=[${this.state.regimeDays}];
-
-        demanda=[${demanda}]
+    let pre =
       `
+    dias = ${this.state.days};
+    clientes = ${this.state.clients};
+    centrales = ${this.state.centrals};
+
+    costos=[${this.state.costs}];
+    capacidades=[${this.state.capabilities}];
+    porcentajeRegimen=[${this.state.regimePercent}];
+    diasRegimen=[${this.state.regimeDays}];
+
+    demanda=[${demanda}]
+    `
     this.setState({
-      data : pre
+      data: pre
     })
     console.log(`${this.state.data}`)
+
+    this.execute();
   }
 
   onCellChange = (e) => {
@@ -221,17 +208,17 @@ class App extends React.Component {
 
     var capabilities = [];
     for (let j = 0; j < this.state.centrals; j++) {
-      capabilities.push(<input id={`cap${j}`} className="cell" type="number" min="0" max="20" value={this.state.capabilities[j]} onChange={this.onChangeCapabilities} />)
+      capabilities.push(<input id={`cap${j}`} className="cell" type="number" min="0" max="20" value={this.state.capabilities[j]} defaultValue={0} onChange={this.onChangeCapabilities} />)
     }
 
     var regimePercent = [];
     for (let j = 0; j < this.state.centrals; j++) {
-      regimePercent.push(<input id={`rep${j}`} className="cell" type="number" min="0" max="20" value={this.state.regimePercent[j]} onChange={this.onChangeRegimePercent} />)
+      regimePercent.push(<input id={`rep${j}`} className="cell" type="number" min="0" max="20" defaultValue={0} value={this.state.regimePercent[j]} onChange={this.onChangeRegimePercent} />)
     }
 
     var regimeDays = [];
     for (let j = 0; j < this.state.centrals; j++) {
-      regimeDays.push(<input id={`red${j}`} className="cell" type="number" min="0" max="20" defaultValue="0" value={this.state.regimeDays[j]} onChange={this.onChangeRegimeDays}/>)
+      regimeDays.push(<input id={`red${j}`} className="cell" type="number" min="0" max="20" defaultValue="0" value={this.state.regimeDays[j]} onChange={this.onChangeRegimeDays} />)
     }
 
     var consuptions = [];
@@ -270,6 +257,10 @@ class App extends React.Component {
               <label className="param-title" htmlFor="days">Dias</label>
               <input type="number" defaultValue={this.state.days} id="days" min={1} max={31} onChange={this.onChangeDays} />
             </div>
+            <div>
+              <label className="param-title" htmlFor="days">Centrales</label>
+              <input type="number" value={this.state.centrals} id="days" min={3} max={10} onChange={this.onChangeCentrals} />
+            </div>
           </div>
 
           <div className="sub-params">
@@ -289,7 +280,7 @@ class App extends React.Component {
           </div>
 
           <div>
-            <input id="submit" type="button" defaultValue={"Submit"} onClick={this.onClickSubmit} />
+            <input id="submit" type="button" defaultValue={"Enviar datos"} onClick={this.onClickSubmit} />
           </div>
 
 
