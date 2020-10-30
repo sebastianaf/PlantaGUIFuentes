@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  client:
+    container_name: react
+    build: ./front-minizinc
+    volumes:
+      - ./front-minizinc:/code
+    ports:
+      - "8000:3000"
+    depends_on: 
+      - server
+    tty: true
+  server:
+    container_name: pyzinc
+    build: ./back
+    volumes:
+      - ./back:/code
+    ports:
+      - "5000:5000"
