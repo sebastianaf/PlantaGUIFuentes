@@ -1,0 +1,13 @@
+dias = 3;
+clientes = 3;
+centrales = 3;
+
+costos=[100,200,300];
+capacidades=[300,400,500];
+porcentajeRegimen=[100,100,100];
+diasRegimen=[4,4,4];
+
+demanda=[|200,200,200|
+          500,800,50|
+          100,100,100|]
+

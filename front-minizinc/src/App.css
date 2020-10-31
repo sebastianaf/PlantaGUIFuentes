@@ -61,7 +61,7 @@
 .matrix .y-title{
   font-weight: bold;
   writing-mode: vertical-rl;
-  text-orientation: sideways  ;
+  text-orientation: vertical-rl;
   font-size: larger;
   
 }
@@ -72,7 +72,7 @@
 }
 
 .cell{
-  width: 50px;
+  width: 70px;
   color: #adadad;
   text-align: center;
 }

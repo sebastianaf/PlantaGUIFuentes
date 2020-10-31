@@ -19,21 +19,14 @@ def allowed_file(filename):
 @app.route('/dzn', methods=['POST'])
 @cross_origin()
 def upload_file():
-    print("<-------------------------------------------->")
-    print("\n----Form----")
-    print(request.form['dznfile'])
-
     models = ['PlantasEnergia.mzn']
     result = "" 
     target = os.path.join(getcwd(), 'upload') 
     data = request.form['dznfile']
     if data != '':
         model = models[0]
-        #filename = secure_filename(dznfile.filename)
         with open(os.path.join(target,'Datos.dzn'),'w') as dznfile : dznfile.write(data)
-        #dznfile.save(os.path.join(target, 'Datos.dzn'))
         command = "minizinc --solver COIN-BC " + os.path.join(getcwd(),'minizinc', model) + " " + os.path.join(target, 'Datos.dzn') + '>' + os.path.join(target, 'output.txt')
-        print(command)
         result = subprocess.Popen(command, shell=True)
         result.wait()
         f = open(os.path.join(target, 'output.txt'))
