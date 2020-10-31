@@ -296,6 +296,11 @@ class App extends React.Component {
             </div>
           </div>
 
+          <div>
+            <label htmlFor="results" >Resultados</label><br/>
+            <textarea id="results" value={this.state.results} type="textarea" rows="10" cols="70" />
+          </div>
+
           <br /><br />
         </div>
       </div>
