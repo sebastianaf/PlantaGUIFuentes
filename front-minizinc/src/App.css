@@ -60,7 +60,8 @@
 
 .matrix .y-title{
   font-weight: bold;
-  
+  writing-mode: vertical-rl;
+  text-orientation: sideways  ;
   font-size: larger;
   
 }

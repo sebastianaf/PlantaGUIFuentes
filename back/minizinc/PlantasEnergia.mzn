@@ -21,6 +21,13 @@ array[1..centrales] of var int: costoProduccion = [(sum(d in 1..dias)(produccion
 
 array[1..centrales, 1..dias] of var int: produccion;
 
+array[1..centrales, 1..dias] of var 0..1: regimenAlto;
+
+%array producción reescrito en arreglo 1D, de tal manera que primero están las centrales ordenadas por costo y del primer día al ultimo
+array[1..centrales*dias] of var int: orden = [produccion[iCostosOrdenado[i],j] | i in 1..centrales, j in 1..dias];
+
+var int: costoProduccionTotal = sum(i in 1..centrales)(costoProduccion[i]);
+
 % restricciones
 
 constraint forall(i in 1..centrales)(forall(j in 1..dias)(produccion[i,j] >= 0));
@@ -31,60 +38,31 @@ constraint forall(i in 1..centrales) (forall(j in 1..dias) (produccion[i, j] <= 
 %Para todos los días la suma de produccion de todas las centrales deben ser iguales a la demanda del día
 constraint forall(d in 1..dias)((sum(i in 1..centrales)(produccion[i,d])) = demandaDia[d]);
 
-% csp -  cop
+%Regimen alto es uno si la producción es mayor que el porcentaje indicado, cero en otro caso
+constraint forall (i in 1..centrales) (forall(j in diasRegimen[i]..dias) 
+  (regimenAlto[i,j] = (produccion[i,j]>capacidadesNoRegimen[i])));
 
-array[1..centrales*dias] of var int: orden =
-      
-      [produccion[iCostosOrdenado[i],j] | i in 1..centrales, j in 1..dias]
-  ;
-
-constraint 
-  
-    forall(i in 1..dias)
-    (
-      (forall(j in 1..centrales)
-        (let{
-        %la capacidad maxima de cada central está definida de la siguiente manera n un día es lo que le permita su capacidad maxima sin superar el umbral para llegar al regimen alto o si se lleg, o lo que hace falta para cubrir la demanda
-          var 0..1: regimenAlto;
-          var int: maxCapacidad = 
-          %Se puede decidir si se llega o no al regimen alto este dia por parte de la central, si se decide no superar el umbral entonces lo mejor es llegar al limite sin penalización. Si se supera, entonces lo mejor es cubrir toda la capacidad de la central.
-              min([
-              
-     (capacidades[iCostosOrdenado[j]]*(porcentajeRegimen[iCostosOrdenado[j]]+(100-porcentajeRegimen[iCostosOrdenado[j]])*regimenAlto)) div 100,
-              %la central podría suministrar lo que hace falta para cubrir la demanda (si no hace falta nada para cubrir la demanda, puede tomar el valor de cero)
-                    demandaDia[i] - sum(k in 1..(j-1)) (produccion[iCostosOrdenado[k],i]),
-                    
-                    %vamos tantos dias hacia atras para verificar si la produccion esos días ha superado el umbral que lo catalogaría como regimen alto. Sumamos las veces que esto ocurre, si le hace falta un día para llegar a lo maximo permitido, entonces este día no se podrá superar el regimen y se llega hasta el limite (1-x con x siendo un boolean lo uso para negar)
-                    
-                    (capacidades[iCostosOrdenado[j]]*(porcentajeRegimen[iCostosOrdenado[j]]+(100-porcentajeRegimen[iCostosOrdenado[j]])*
-                      (1-( diasRegimen[iCostosOrdenado[j]]-1 = 
-                        sum(k in (i-diasRegimen[iCostosOrdenado[j]]+1)..(i-1) where k>0) 
-                          (produccion[iCostosOrdenado[j],k] > capacidadesNoRegimen[iCostosOrdenado[j]]
-                          
-                      ))))) div 100
-                      ]);
-        }
-        in
-          produccion[iCostosOrdenado[j],i] = maxCapacidad
-        )
-      )
-    )
-  ;
-
-var int: costoProduccionTotal = sum(i in 1..centrales)(costoProduccion[i]);
+%no puede pasar que la suma de días consecutivos iguales al limite de dias de regimen sean iguales,
+%es decir, si tenemos n días de regimen, no pueden haber n días seguidos con regimenAlto igual a 1
+constraint forall (i in 1..centrales) (forall(j in diasRegimen[i]..dias)
+  (not(diasRegimen[i] == (sum(k in j-diasRegimen[i]+1..j) (regimenAlto[i,k])))));
 
 
-%solve:: int_search(costoProduccion, first_fail, indomain_min) satisfy;
-%solve:: int_search(costoProduccion, smallest, indomain_split) minimize costoProduccionTotal;
+%Si lo que puede producir es menor que lo que hace falta para completar la demanda entonces la central da todo lo que puede
+%Si lo que hace falta para completar la demanda es menor que lo que puede hacer, entonces da lo que haga falta para completar la demanda (puede ser cero)
+constraint forall(i in 1..centrales) (forall(j in 1..dias)
+  (produccion[iCostosOrdenado[i],j] = min(capacidades[iCostosOrdenado[i]]*regimenAlto[iCostosOrdenado[i],j]
+                                          + capacidadesNoRegimen[iCostosOrdenado[i]]*(1-regimenAlto[iCostosOrdenado[i],j]),
+                                          demandaDia[j]-sum(k in 1..(i-1)) (produccion[iCostosOrdenado[k],j]))
+  ));
+
+
+% funcion objetivo 
+
 solve:: int_search(orden, input_order, indomain_max) minimize costoProduccionTotal;
-%solve:: int_search(costoProduccion, smallest, indomain_max) minimize costoProduccionTotal;
-%solve minimize costoProduccionTotal;
-%solve satisfy;
 
+% salida
 output["costos:\n"] ++ ["\(i): \(costos[i]); " | i in 1..length(costos)] ++ 
-      ["\ncostoProduccion:\n"] ++ ["\(i): \(costoProduccion[i]); " | i in 1..length(costoProduccion)] ++ 
-      ["\ncapacidades:\n"] ++ ["\(i): \(capacidades[i]); " | i in 1..length(capacidades)] ++ 
       ["\ntotal: \(costoProduccionTotal)\n"] ++ 
-      ["demanda:\n"] ++ ["\(demanda[i,j])" ++ if j == dias then "\n" else " " endif | i in 1..clientes,j in 1..dias] ++
-      ["produccion:\n"] ++ ["\(produccion[i,j])" ++ if j == dias then "\n" else " " endif | i in 1..centrales,j in 1..dias];                                
+      ["\nproduccion:\n"] ++ ["\(produccion[i,j])" ++ if j == dias then "\n" else " " endif | i in 1..centrales,j in 1..dias];                                
       

@@ -18,6 +18,7 @@ class App extends React.Component {
       regimePercent: [],
       regimeDays: [],
       matrix: [],
+      results: '',
 
 
       data: 'No hay informacion',
@@ -74,7 +75,7 @@ class App extends React.Component {
         alert("Se ha producido un error. Es posible que la causa sea la selección de un modelo incorrecto");
       } else {
         const result = response.data;
-        this.setState({ r: result.substring(0, result.length - 22) });
+        this.setState({ results: result.substring(0, result.length - 22) });
       }
     }
     ).catch((error) => alert("Se ha producido un error. Es posible que la causa sea la selección de un modelo incorrecto"))

@@ -28,11 +28,12 @@ def upload_file():
     target = os.path.join(getcwd(), 'upload') 
     data = request.form['dznfile']
     if data != '':
-        model = models[int(request.args.get('model'))]
+        model = models[0]
         #filename = secure_filename(dznfile.filename)
         with open(os.path.join(target,'Datos.dzn'),'w') as dznfile : dznfile.write(data)
         #dznfile.save(os.path.join(target, 'Datos.dzn'))
-        command = "minizinc --solver COIN-DB " + os.path.join(getcwd(),'minizinc', model) + " " + os.path.join(target, 'Datos.dzn') + '>' + os.path.join(target, 'output.txt')
+        command = "minizinc --solver COIN-BC " + os.path.join(getcwd(),'minizinc', model) + " " + os.path.join(target, 'Datos.dzn') + '>' + os.path.join(target, 'output.txt')
+        print(command)
         result = subprocess.Popen(command, shell=True)
         result.wait()
         f = open(os.path.join(target, 'output.txt'))
